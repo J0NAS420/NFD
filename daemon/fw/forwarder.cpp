@@ -153,11 +153,11 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
     this->onInterestLoop(interest, ingress);
     return;
   }
-
+  
   // Data will be received at a interface potentially different to ingress
   if (interest.hasTestValue()) {
     m_reservationTable.addReservationIncoming(interest, ingress);
-    m_reservationTable.addReservationOutgoing(interest, ingress);
+    m_reservationTable.addReservationOutgoing(interest, ingress.face);
   }
 
   m_reservationTable.changeQdiscWithTimer(); // @todo replace with periodic function call!

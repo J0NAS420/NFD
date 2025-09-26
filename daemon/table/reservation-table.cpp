@@ -5,7 +5,7 @@ namespace nfd {
 std::vector<uint8_t> ReservationTable::cbsTrafficClasses = {1, 2};
 std::map<std::string, std::string> ReservationTable::interfaceMap = {{"enp3s0", "enp3s0"}};
 std::map< uint8_t, uint8_t > ReservationTable::priorityTrafficClassMap = {{3, 1}, {2, 2}};
-srInfo ReservationTable::baselineSRConfig = {1250+14+4+80+24+100, 47104};
+srInfo ReservationTable::baselineSRConfig = {1250+14+4+80+24+100, 2816};
 genInfo ReservationTable::baselineGenInfo = {1542, 1000000};
 
 ReservationTable::ReservationTable()
