@@ -3,8 +3,6 @@
 #include <cmath>
 #include <vector>
 
-namespace nfd {
-
 struct srInfo {
   uint32_t maxFrameSize;
   uint32_t assignedBitrate;
@@ -23,9 +21,7 @@ struct cbsConfigs {
 };
 
 std::vector<cbsConfigs> prepareCBSInfo (std::vector<srInfo> srInfoVector, genInfo genInfoStruct);
-uint32_t calculateIdleSlope (double bwfrac, uint32_t portTransmitRate);
-uint32_t calculateSendSlope (double bwfrac, uint32_t portTransmitRate);
-uint32_t calculateLoCredit (uint32_t maxFrameSize, double bwfrac, uint32_t portTransmitRate);
-uint32_t calculateHiCredit (std::vector<srInfo> srInfoVector, genInfo genInfoStruct, std::vector<cbsConfigs> cbsConfigsVector, size_t entryIndex);
-
-} // namespace nfd
+int32_t calculateIdleSlope (double bwfrac, int32_t portTransmitRate);
+int32_t calculateSendSlope (double bwfrac, int32_t portTransmitRate);
+int32_t calculateLoCredit (int32_t maxFrameSize, double bwfrac, int32_t portTransmitRate);
+int32_t calculateHiCredit (std::vector<srInfo> srInfoVector, genInfo genInfoStruct, std::vector<cbsConfigs> cbsConfigsVector, size_t entryIndex);

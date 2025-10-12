@@ -160,7 +160,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
     m_reservationTable.addReservationOutgoing(interest, ingress.face);
   }
 
-  //m_reservationTable.changeQdiscWithTimer(); // @todo replace with periodic function call!
+  m_reservationTable.changeQdiscWithTimer(); // @todo replace with periodic function call!
 
   // is pending?
   if (!pitEntry->hasInRecords()) {

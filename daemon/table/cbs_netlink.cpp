@@ -155,23 +155,23 @@ int send_cbs_message(__u16 type, __u16 flags, const char *dev, const char *handl
 
     int nl_socket = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
     if (nl_socket < 0) {
-        fprintf(stderr, "Error while opening netlink socket.");
+        fprintf(stderr, "Error while opening netlink socket.\n");
         return -1;
     }
 
-    sockaddr_nl local_address = {};
+    /*sockaddr_nl local_address = {};
     local_address.nl_family = AF_NETLINK;
     local_address.nl_pid = getpid();
     
     int bind_error = bind(nl_socket, (sockaddr*) &local_address, sizeof(local_address));
     if (bind_error < 0) {
-        fprintf(stderr, "Error while binding netlink socket,");
+        fprintf(stderr, "Error while binding netlink socket.\n");
         return -1;
-    }
+    }*/
 
     int send_error = send(nl_socket, &request, request.nl_header.nlmsg_len, 0);
     if (send_error < 0) {
-        fprintf(stderr, "Problem with Netlink request.");
+        fprintf(stderr, "Problem with Netlink request.\n");
         return -1;
     }
 

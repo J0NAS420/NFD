@@ -98,15 +98,15 @@ ReservationTable::changeQdiscWithTimer()
       srInfoVector.push_back(srInfoStruct);
     }
       
-    /*std::vector<cbsConfigs> cbsConfigsVector = prepareCBSInfo(srInfoVector, baselineGenInfo);
+    std::vector<cbsConfigs> cbsConfigsVector = prepareCBSInfo(srInfoVector, baselineGenInfo);
     for (size_t i = 0; i < cbsTrafficClasses.size(); ++i) { // change CBS parameters for each traffic class
       std::string parentClassID = "100:" + std::to_string(cbsTrafficClasses.at(i));
-      //int qdiscError = change_cbs(dev->first.c_str(), "none", parentClassID.c_str(), cbsConfigsVector.at(i).hiCredit, 
-      //    cbsConfigsVector.at(i).loCredit, cbsConfigsVector.at(i).idleSlope, cbsConfigsVector.at(i).loCredit);
-      //if (qdiscError)
-      //  std::cerr << "Error with changing qdisc!" << std::endl;
+      int qdiscError = change_cbs(dev->first.c_str(), "none", parentClassID.c_str(), cbsConfigsVector.at(i).hiCredit, 
+          cbsConfigsVector.at(i).loCredit, cbsConfigsVector.at(i).idleSlope, cbsConfigsVector.at(i).loCredit);
+      if (qdiscError)
+        std::cerr << "Error with changing qdisc!" << std::endl;
     }
-    m_duplicateCheckMap.at(dev->first).clear(); // reset duplicate checks */
+    m_duplicateCheckMap.at(dev->first).clear(); // reset duplicate checks 
   }
 }
 
