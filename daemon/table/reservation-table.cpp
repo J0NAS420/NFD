@@ -76,7 +76,6 @@ ReservationTable::addReservationOutgoing(const Interest& interest, const Face& e
 void
 ReservationTable::changeQdiscWithTimer()
 {
-  return;
   if (interfaceMap.empty() || priorityTrafficClassMap.empty())
     return;
 
