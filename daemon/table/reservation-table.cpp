@@ -58,6 +58,11 @@ ReservationTable::addReservationToMap(const Interest& interest, const std::strin
 void
 ReservationTable::addReservationIncoming(const Interest& interest, const FaceEndpoint& ingress)
 {
+  // @todo add some debug lines for the file here!!!
+  m_debugFile << "DEVICE: " << std::endl << "Endpoint: " << ingress.face.getLocalUri() << " | Scheme: " << ingress.face.getLocalUri().getScheme()
+    << " | Device?: " << ingress.face.getLocalUri().getPath() << std::endl << "Interest: " << interest.getName()
+    << " | Priority?: " << std::stoi(interest.getName().getSubName(1, 1).toUri().substr(5)) << std::endl << std::endl;
+
   if (!interest.hasTestValue() || ingress.face.getLocalUri().getScheme().compare("dev") != 0) 
     return;
 
@@ -110,7 +115,7 @@ ReservationTable::changeQdiscWithTimer()
     for (size_t i = 0; i < m_cbsTrafficClasses.size(); ++i) { // change CBS parameters for each traffic class
       std::string parentClassID = "100:" + std::to_string(m_cbsTrafficClasses.at(i));
       // @todo REMOVE LATER!
-      m_debugFile << "QDISC: change dev"  << dev->first.c_str() << " handle none parent" << parentClassID.c_str() << " hicredit " << cbsConfigsVector.at(i).hiCredit
+      m_debugFile << "QDISC: change dev"  << dev->first.c_str() << " handle none parent " << parentClassID.c_str() << " hicredit " << cbsConfigsVector.at(i).hiCredit
         << " locredit " << cbsConfigsVector.at(i).loCredit << " idleslope " << cbsConfigsVector.at(i).idleSlope << " sendlope " << cbsConfigsVector.at(i).sendSlope << std::endl << std::endl;
       int qdiscError = change_cbs(dev->first.c_str(), "none", parentClassID.c_str(), cbsConfigsVector.at(i).hiCredit, 
           cbsConfigsVector.at(i).loCredit, cbsConfigsVector.at(i).idleSlope, cbsConfigsVector.at(i).sendSlope);

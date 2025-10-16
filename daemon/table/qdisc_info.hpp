@@ -4,20 +4,20 @@
 #include <vector>
 
 struct srInfo {
-  uint32_t maxFrameSize;
-  uint32_t assignedBitrate;
+  int32_t maxFrameSize;
+  int32_t assignedBitrate;
 };
 
 struct genInfo {
-  uint32_t maxFrameSize;
-  uint32_t portTransmitRate;
+  int32_t maxFrameSize;
+  int32_t portTransmitRate;
 };
 
 struct cbsConfigs {
-    uint32_t idleSlope;
-    uint32_t sendSlope;
-    uint32_t hiCredit;
-    uint32_t loCredit;
+  int32_t idleSlope;
+  int32_t sendSlope;
+  int32_t hiCredit;
+  int32_t loCredit;
 };
 
 std::vector<cbsConfigs> prepareCBSInfo (std::vector<srInfo> srInfoVector, genInfo genInfoStruct);
