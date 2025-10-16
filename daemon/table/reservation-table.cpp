@@ -17,7 +17,7 @@ ReservationTable::ReservationTable()
   m_priorityTrafficClassMap = {};
   m_baselineSRConfig = {};
   m_baselineGenInfo = {};
-  readConfigJSON("/home/jonas/.test/AnsibleConfig.json"); // @todo Change this!
+  readConfigJSON("/root/nfd_reservation_table_config.json");
 
   m_lastQdiscChange = std::chrono::steady_clock::now();
 }
