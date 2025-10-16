@@ -2,23 +2,31 @@
 
 namespace nfd {
 
-std::vector<uint8_t> ReservationTable::cbsTrafficClasses = {1, 2};
-std::map<std::string, std::string> ReservationTable::interfaceMap = {{"enp3s0", "enp3s0"}};
-std::map< uint8_t, uint8_t > ReservationTable::priorityTrafficClassMap = {{3, 1}, {2, 2}};
-srInfo ReservationTable::baselineSRConfig = {1250+14+4+80+24+100, 2816};
-genInfo ReservationTable::baselineGenInfo = {1542, 1000000};
-
 ReservationTable::ReservationTable()
 {
   m_duplicateCheckMap = {};
   m_reservationMap = {};
+
+  // @todo REMOVE LATER!
+  std::ofstream ("/tmp/qdisc_debug.txt");
+  m_debugFile.open("/tmp/qdisc_debug.txt", std::ios_base::app);
+
+  // the following variables are initialized by reading a JSON file
+  m_cbsTrafficClasses = {};
+  m_interfaceMap = {};
+  m_priorityTrafficClassMap = {};
+  m_baselineSRConfig = {};
+  m_baselineGenInfo = {};
+  readConfigJSON("/home/jonas/.test/AnsibleConfig.json"); // @todo Change this!
+
+  m_lastQdiscChange = std::chrono::steady_clock::now();
 }
 
 void
 ReservationTable::addReservationToMap(const Interest& interest, const std::string interface)
 {
   uint8_t priority = (uint8_t) std::stoi(interest.getName().getSubName(1, 1).toUri().substr(5));
-  if (priorityTrafficClassMap.find(priority) == priorityTrafficClassMap.end()) 
+  if (m_priorityTrafficClassMap.find(priority) == m_priorityTrafficClassMap.end()) 
     return;
 
   if (m_duplicateCheckMap.find(interface) == m_duplicateCheckMap.end()) { // interface not found -> add new set/map to maps
@@ -28,7 +36,7 @@ ReservationTable::addReservationToMap(const Interest& interest, const std::strin
     m_duplicateCheckMap.insert({interface, interestNameSet});
         
     // add map to count reserved bandwidth
-    uint8_t trafficClass = priorityTrafficClassMap.at(priority);
+    uint8_t trafficClass = m_priorityTrafficClassMap.at(priority);
     std::map<uint8_t, uint32_t> tcReservationMap = {};
     tcReservationMap.insert({trafficClass, interest.getTestValue().value()});
     m_reservationMap.insert({interface, tcReservationMap});
@@ -38,10 +46,10 @@ ReservationTable::addReservationToMap(const Interest& interest, const std::strin
     if (interestNameSet.find(interest.getName().toUri()) == interestNameSet.end()) { // no duplicate -> add reservation
       m_duplicateCheckMap.at(interface).insert(interest.getName().toUri());
           
-      uint8_t trafficClass = priorityTrafficClassMap.at(priority);
+      uint8_t trafficClass = m_priorityTrafficClassMap.at(priority);
       if (m_reservationMap.at(interface).find(trafficClass) == m_reservationMap.at(interface).end())
         m_reservationMap.at(interface).insert({trafficClass, 0});
-      m_reservationMap.at(interface).at(trafficClass) += interest.getTestValue().value(); // @todo Check if the value can be changed this way!
+      m_reservationMap.at(interface).at(trafficClass) += interest.getTestValue().value();
     }
   }
 }
@@ -54,9 +62,9 @@ ReservationTable::addReservationIncoming(const Interest& interest, const FaceEnd
     return;
 
   const std::string ingressInterface = ingress.face.getLocalUri().getPath(); 
-  if (interfaceMap.find(ingressInterface) == interfaceMap.end())
+  if (m_interfaceMap.find(ingressInterface) == m_interfaceMap.end())
     return;
-  const std::string dataInterface = interfaceMap.at(ingressInterface);
+  const std::string dataInterface = m_interfaceMap.at(ingressInterface);
 
   addReservationToMap(interest, dataInterface);
 }
@@ -76,7 +84,7 @@ ReservationTable::addReservationOutgoing(const Interest& interest, const Face& e
 void
 ReservationTable::changeQdiscWithTimer()
 {
-  if (interfaceMap.empty() || priorityTrafficClassMap.empty())
+  if (m_interfaceMap.empty() || m_priorityTrafficClassMap.empty())
     return;
 
   auto nowTime = std::chrono::steady_clock::now();
@@ -86,23 +94,26 @@ ReservationTable::changeQdiscWithTimer()
   m_lastQdiscChange = std::chrono::steady_clock::now();
   for (std::map< std::string, std::set<std::string> >::const_iterator dev = m_duplicateCheckMap.begin(); dev != m_duplicateCheckMap.end(); ++dev) {
     std::vector<srInfo> srInfoVector = {};
-    for (std::vector<uint8_t>::const_iterator tc = cbsTrafficClasses.begin(); tc != cbsTrafficClasses.end(); ++tc) { // get reservations for each traffic class
+    for (std::vector<uint8_t>::const_iterator tc = m_cbsTrafficClasses.begin(); tc != m_cbsTrafficClasses.end(); ++tc) { // get reservations for each traffic class
       srInfo srInfoStruct = {};
-      srInfoStruct.maxFrameSize = baselineSRConfig.maxFrameSize;
+      srInfoStruct.maxFrameSize = m_baselineSRConfig.maxFrameSize;
       if (m_reservationMap.at(dev->first).find(*tc) != m_reservationMap.at(dev->first).end()) { // reservations exist
-        srInfoStruct.assignedBitrate = baselineSRConfig.assignedBitrate + m_reservationMap.at(dev->first).at(*tc);
+        srInfoStruct.assignedBitrate = m_baselineSRConfig.assignedBitrate + m_reservationMap.at(dev->first).at(*tc);
         m_reservationMap.at(dev->first).at(*tc) = 0; // reset reservations
       } 
       else  // no reservations -> only use baseline config
-        srInfoStruct.assignedBitrate = baselineSRConfig.assignedBitrate;
+        srInfoStruct.assignedBitrate = m_baselineSRConfig.assignedBitrate;
       srInfoVector.push_back(srInfoStruct);
     }
       
-    std::vector<cbsConfigs> cbsConfigsVector = prepareCBSInfo(srInfoVector, baselineGenInfo);
-    for (size_t i = 0; i < cbsTrafficClasses.size(); ++i) { // change CBS parameters for each traffic class
-      std::string parentClassID = "100:" + std::to_string(cbsTrafficClasses.at(i));
+    std::vector<cbsConfigs> cbsConfigsVector = prepareCBSInfo(srInfoVector, m_baselineGenInfo);
+    for (size_t i = 0; i < m_cbsTrafficClasses.size(); ++i) { // change CBS parameters for each traffic class
+      std::string parentClassID = "100:" + std::to_string(m_cbsTrafficClasses.at(i));
+      // @todo REMOVE LATER!
+      m_debugFile << "QDISC: change dev"  << dev->first.c_str() << " handle none parent" << parentClassID.c_str() << " hicredit " << cbsConfigsVector.at(i).hiCredit
+        << " locredit " << cbsConfigsVector.at(i).loCredit << " idleslope " << cbsConfigsVector.at(i).idleSlope << " sendlope " << cbsConfigsVector.at(i).sendSlope << std::endl << std::endl;
       int qdiscError = change_cbs(dev->first.c_str(), "none", parentClassID.c_str(), cbsConfigsVector.at(i).hiCredit, 
-          cbsConfigsVector.at(i).loCredit, cbsConfigsVector.at(i).idleSlope, cbsConfigsVector.at(i).loCredit);
+          cbsConfigsVector.at(i).loCredit, cbsConfigsVector.at(i).idleSlope, cbsConfigsVector.at(i).sendSlope);
       if (qdiscError)
         std::cerr << "Error with changing qdisc!" << std::endl;
     }
@@ -110,10 +121,48 @@ ReservationTable::changeQdiscWithTimer()
   }
 }
 
+// inspired by https://stackoverflow.com/questions/5891610/how-to-remove-certain-characters-from-a-string-in-c
+// removes every instance of the character c from str
+void 
+removeCharFromString (std::string &str, char c) {
+    str.erase( std::remove(str.begin(), str.end(), c), str.end() );
+}
+
+/* initializes the variables m_cbsTrafficClasses, m_interfaceMap, m_priorityTrafficClassMap, m_baselineSRConfig and m_baselineGenInfo
+ * with values specified in a JSON file at 'file'
+ */ 
 void
-ReservationTable::configureJSON(std::string jsonString)
+ReservationTable::readConfigJSON(std::string file)
 {
-  return;
+  std::ifstream jsonStream (file);
+  RSJresource jsonRes (jsonStream);
+
+  RSJarray tcArray = jsonRes["cbsTrafficClasses"].as_array();
+  for (auto tc = tcArray.begin(); tc != tcArray.end(); ++tc) 
+    m_cbsTrafficClasses.push_back((uint8_t) (tc->as<int>()));
+
+  for (int i = 0; i < jsonRes["interfaceMap"]["interest"].size(); ++i) {
+    std::string ingress = jsonRes["interfaceMap"]["interest"][i].as_str();
+    removeCharFromString(ingress, '\"');
+    std::string egress = jsonRes["interfaceMap"]["data"][i].as_str();
+    removeCharFromString(egress, '\"');
+    m_interfaceMap.insert({ingress, egress});
+  }
+
+  for (int i = 0; i < jsonRes["priorityTrafficClassMap"]["priorities"].size(); ++i) {
+    uint8_t prio = jsonRes["priorityTrafficClassMap"]["priorities"][i].as<int>();
+    uint8_t tc = jsonRes["priorityTrafficClassMap"]["trafficClasses"][i].as<int>();
+    m_priorityTrafficClassMap.insert({prio, tc});
+  }
+
+  m_baselineSRConfig.maxFrameSize = jsonRes["baselineSRConfig"]["maxFrameSize"].as<int>();
+  m_baselineSRConfig.assignedBitrate = jsonRes["baselineSRConfig"]["assignedBitrate"].as<int>();
+    
+  m_baselineGenInfo.maxFrameSize = jsonRes["baselineGenInfo"]["maxFrameSize"].as<int>();
+  m_baselineGenInfo.portTransmitRate = jsonRes["baselineGenInfo"]["portTransmitRate"].as<int>();
+
+  // @todo REMOVE LATER!
+  m_debugFile << "JSON CONFIG: " << std::endl << jsonRes.as_str() << std::endl << std::endl;
 }
 
 }

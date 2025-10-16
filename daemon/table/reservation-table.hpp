@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <algorithm>
 #include <bits/stdc++.h>
 #include <chrono>
 
@@ -8,6 +9,8 @@
 
 #include "cbs_netlink.hpp"
 #include "qdisc_info.hpp"
+
+#include "RSJparser.hpp"
 
 
 namespace nfd {
@@ -32,10 +35,10 @@ public:
   void
   changeQdiscWithTimer();
 
-  static void
-  configureJSON(std::string jsonString);
-
 private:
+
+  void
+  readConfigJSON(std::string file);
 
   void
   addReservationToMap(const Interest& interest, const std::string interface);
@@ -46,21 +49,24 @@ private:
   // map interfaces to interest names 
   std::map< std::string, std::set<std::string> > m_duplicateCheckMap;
   // map interfaces to map of traffic class to accumulated reserved bandwidth
-  std::map< std::string, std::map<uint8_t, uint32_t> > m_reservationMap;
+  std::unordered_map< std::string, std::map<uint8_t, uint32_t> > m_reservationMap;
 
   // vector of traffic classes in descending order that have a CBS qdisc installed
-  static std::vector<uint8_t> cbsTrafficClasses;
+  std::vector<uint8_t> m_cbsTrafficClasses;
 
   // Maps the incoming interest interfaces to interfaces where data is received
-  static std::map<std::string, std::string> interfaceMap;
+  std::unordered_map<std::string, std::string> m_interfaceMap;
 
   // Map the packet priorities to MQPRIO/TAPRIO traffic classes of CBS qdiscs 
   // if priority is not present, then qdisc is not CBS!
-  static std::map< uint8_t, uint8_t > priorityTrafficClassMap;
+  std::unordered_map< uint8_t, uint8_t > m_priorityTrafficClassMap;
 
-  static srInfo baselineSRConfig;
-  static genInfo baselineGenInfo;
+  // These structs save information to calculate the CBS parameters using the cbs_netlink program
+  srInfo m_baselineSRConfig;
+  genInfo m_baselineGenInfo;
 
+  // @todo REMOVE LATER!!!
+  std::ofstream m_debugFile;
 };
 
 } // namespace nfd
