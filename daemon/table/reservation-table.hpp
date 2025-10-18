@@ -57,6 +57,9 @@ private:
   // Maps the incoming interest interfaces to interfaces where data is received
   std::unordered_map<std::string, std::string> m_interfaceMap;
 
+  // Maps EnGINE flows to their underlying interfaces
+  std::unordered_map<std::string, std::string> m_flowMap;
+
   // Map the packet priorities to MQPRIO/TAPRIO traffic classes of CBS qdiscs 
   // if priority is not present, then qdisc is not CBS!
   std::unordered_map< uint8_t, uint8_t > m_priorityTrafficClassMap;

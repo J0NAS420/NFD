@@ -17,7 +17,7 @@ ReservationTable::ReservationTable()
   m_priorityTrafficClassMap = {};
   m_baselineSRConfig = {};
   m_baselineGenInfo = {};
-  readConfigJSON("/home/jonas/.test/AnsibleConfig.json"); // /root/nfd_reservation_table_config.json"); // @todo CHANGE LATER!
+  readConfigJSON("/root/nfd_reservation_table_config.json");
 
   m_lastQdiscChange = std::chrono::steady_clock::now();
 }
@@ -59,11 +59,11 @@ void
 ReservationTable::addReservationIncoming(const Interest& interest, const FaceEndpoint& ingress)
 {
   // @todo add some debug lines for the file here!!!
-  m_debugFile << "DEVICE: " << std::endl << "Interest: " << interest.getName()
-    << " | Priority?: " << std::stoi(interest.getName().getSubName(1, 1).toUri().substr(5)) << std::endl;
+  m_debugFile << "DEVICE: " << std::endl << "Interest: " << interest.getName() << std::endl;
+  //  << " | Priority?: " << std::stoi(interest.getName().getSubName(1, 1).toUri().substr(5)) << std::endl;
   m_debugFile << "Endpoint local: " << ingress.face.getLocalUri() << "; scheme: " << ingress.face.getLocalUri().getScheme()
     << "; host: " << ingress.face.getLocalUri().getHost() << "; path: " << ingress.face.getLocalUri().getPath()
-    << "; port: " << ingress.face.getLocalUri().getPort() << std::endl;
+    << "; port: " << ingress.face.getLocalUri().getPort() << std::endl << std::endl;
     m_debugFile << "Endpoint remote: " << ingress.face.getRemoteUri() << "; scheme: " << ingress.face.getRemoteUri().getScheme()
     << "; host: " << ingress.face.getRemoteUri().getHost() << "; path: " << ingress.face.getRemoteUri().getPath()
     << "; port: " << ingress.face.getRemoteUri().getPort() << std::endl << std::endl;
@@ -72,9 +72,14 @@ ReservationTable::addReservationIncoming(const Interest& interest, const FaceEnd
   if (!interest.hasTestValue() || ingress.face.getLocalUri().getScheme().compare("dev") != 0) 
     return;
 
-  const std::string ingressInterface = ingress.face.getLocalUri().getPath(); 
+  const std::string flow = ingress.face.getLocalUri().getHost();
+  if (m_flowMap.find(flow) == m_flowMap.end())
+    return;
+
+  const std::string ingressInterface = m_flowMap.at(flow); 
   if (m_interfaceMap.find(ingressInterface) == m_interfaceMap.end())
     return;
+
   const std::string dataInterface = m_interfaceMap.at(ingressInterface);
 
   addReservationToMap(interest, dataInterface);
@@ -87,7 +92,11 @@ ReservationTable::addReservationOutgoing(const Interest& interest, const Face& e
   if (!interest.hasTestValue() || egress.getLocalUri().getScheme().compare("dev") != 0) 
     return;
 
-  const std::string dataInterface = egress.getLocalUri().getPath();
+  const std::string flow = egress.getLocalUri().getHost();
+  if (m_flowMap.find(flow) == m_flowMap.end())
+    return;
+
+  const std::string dataInterface = m_flowMap.at(flow);
 
   addReservationToMap(interest, dataInterface);
 }
@@ -159,6 +168,15 @@ ReservationTable::readConfigJSON(std::string file)
     removeCharFromString(egress, '\"');
     m_interfaceMap.insert({ingress, egress});
   }
+
+  for (int i = 0; i < jsonRes["flowMap"]["flows"].size(); ++i) {
+    std::string flow = jsonRes["flowMap"]["flows"][i].as_str();
+    removeCharFromString(flow, '\"');
+    std::string interface = jsonRes["flowMap"]["interfaces"][i].as_str();
+    removeCharFromString(interface, '\"');
+    m_flowMap.insert({flow, interface});
+  }
+
 
   for (int i = 0; i < jsonRes["priorityTrafficClassMap"]["priorities"].size(); ++i) {
     uint8_t prio = jsonRes["priorityTrafficClassMap"]["priorities"][i].as<int>();
