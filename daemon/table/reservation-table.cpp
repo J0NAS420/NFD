@@ -17,7 +17,7 @@ ReservationTable::ReservationTable()
   m_priorityTrafficClassMap = {};
   m_baselineSRConfig = {};
   m_baselineGenInfo = {};
-  readConfigJSON("/root/nfd_reservation_table_config.json");
+  readConfigJSON("/home/jonas/.test/AnsibleConfig.json"); // /root/nfd_reservation_table_config.json"); // @todo CHANGE LATER!
 
   m_lastQdiscChange = std::chrono::steady_clock::now();
 }
@@ -59,9 +59,15 @@ void
 ReservationTable::addReservationIncoming(const Interest& interest, const FaceEndpoint& ingress)
 {
   // @todo add some debug lines for the file here!!!
-  m_debugFile << "DEVICE: " << std::endl << "Endpoint: " << ingress.face.getLocalUri() << " | Scheme: " << ingress.face.getLocalUri().getScheme()
-    << " | Device?: " << ingress.face.getLocalUri().getPath() << std::endl << "Interest: " << interest.getName()
-    << " | Priority?: " << std::stoi(interest.getName().getSubName(1, 1).toUri().substr(5)) << std::endl << std::endl;
+  m_debugFile << "DEVICE: " << std::endl << "Interest: " << interest.getName()
+    << " | Priority?: " << std::stoi(interest.getName().getSubName(1, 1).toUri().substr(5)) << std::endl;
+  m_debugFile << "Endpoint local: " << ingress.face.getLocalUri() << "; scheme: " << ingress.face.getLocalUri().getScheme()
+    << "; host: " << ingress.face.getLocalUri().getHost() << "; path: " << ingress.face.getLocalUri().getPath()
+    << "; port: " << ingress.face.getLocalUri().getPort() << std::endl;
+    m_debugFile << "Endpoint remote: " << ingress.face.getRemoteUri() << "; scheme: " << ingress.face.getRemoteUri().getScheme()
+    << "; host: " << ingress.face.getRemoteUri().getHost() << "; path: " << ingress.face.getRemoteUri().getPath()
+    << "; port: " << ingress.face.getRemoteUri().getPort() << std::endl << std::endl;
+    
 
   if (!interest.hasTestValue() || ingress.face.getLocalUri().getScheme().compare("dev") != 0) 
     return;
