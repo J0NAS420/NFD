@@ -155,7 +155,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
   // Data will be received at a interface potentially different to ingress
   if (interest.hasTestValue()) {
     m_reservationTable.addReservationIncoming(interest, ingress);
-    m_reservationTable.addReservationOutgoing(interest, ingress.face);
+    //m_reservationTable.addReservationOutgoing(interest, ingress.face);
     m_reservationTable.changeQdiscWithTimer(); // @todo replace with periodic function call!
   }
 
@@ -276,7 +276,7 @@ Forwarder::onOutgoingInterest(const Interest& interest, Face& egress,
 
   // Data will be received at egress interface -> reserve bandwidth for egress
   if (interest.hasTestValue()) {
-    m_reservationTable.addReservationOutgoing(interest, egress);
+    //m_reservationTable.addReservationOutgoing(interest, egress);
     m_reservationTable.changeQdiscWithTimer(); // @todo replace with periodic function call!
   }
     
