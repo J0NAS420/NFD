@@ -17,6 +17,7 @@ ReservationTable::ReservationTable()
   m_priorityTrafficClassMap = {};
   m_baselineSRConfig = {};
   m_baselineGenInfo = {};
+  m_dataBytes = 0;
   readConfigJSON("/root/nfd_reservation_table_config.json");
 
   m_lastQdiscChange = std::chrono::steady_clock::now();
@@ -64,9 +65,6 @@ ReservationTable::addReservationIncoming(const Interest& interest, const FaceEnd
   m_debugFile << "Endpoint local: " << ingress.face.getLocalUri() << "; scheme: " << ingress.face.getLocalUri().getScheme()
     << "; host: " << ingress.face.getLocalUri().getHost() << "; path: " << ingress.face.getLocalUri().getPath()
     << "; port: " << ingress.face.getLocalUri().getPort() << std::endl << std::endl;
-    m_debugFile << "Endpoint remote: " << ingress.face.getRemoteUri() << "; scheme: " << ingress.face.getRemoteUri().getScheme()
-    << "; host: " << ingress.face.getRemoteUri().getHost() << "; path: " << ingress.face.getRemoteUri().getPath()
-    << "; port: " << ingress.face.getRemoteUri().getPort() << std::endl << std::endl;
     
 
   if (!interest.hasTestValue() || ingress.face.getLocalUri().getScheme().compare("dev") != 0) 
@@ -119,6 +117,7 @@ ReservationTable::changeQdiscWithTimer()
       srInfoStruct.maxFrameSize = m_baselineSRConfig.maxFrameSize;
       if (m_reservationMap.at(dev->first).find(*tc) != m_reservationMap.at(dev->first).end()) { // reservations exist
         srInfoStruct.assignedBitrate = m_baselineSRConfig.assignedBitrate + m_reservationMap.at(dev->first).at(*tc);
+        srInfoStruct.maxFrameSize += m_dataBytes;
         m_reservationMap.at(dev->first).at(*tc) = 0; // reset reservations
       } 
       else  // no reservations -> only use baseline config
@@ -130,7 +129,7 @@ ReservationTable::changeQdiscWithTimer()
     for (size_t i = 0; i < m_cbsTrafficClasses.size(); ++i) { // change CBS parameters for each traffic class
       std::string parentClassID = "100:" + std::to_string(m_cbsTrafficClasses.at(i));
       // @todo REMOVE LATER!
-      m_debugFile << "QDISC: change dev"  << dev->first.c_str() << " handle none parent " << parentClassID.c_str() << " hicredit " << cbsConfigsVector.at(i).hiCredit
+      m_debugFile << "QDISC: change dev "  << dev->first.c_str() << " handle none parent " << parentClassID.c_str() << " hicredit " << cbsConfigsVector.at(i).hiCredit
         << " locredit " << cbsConfigsVector.at(i).loCredit << " idleslope " << cbsConfigsVector.at(i).idleSlope << " sendlope " << cbsConfigsVector.at(i).sendSlope << std::endl << std::endl;
       int qdiscError = change_cbs(dev->first.c_str(), "none", parentClassID.c_str(), cbsConfigsVector.at(i).hiCredit, 
           cbsConfigsVector.at(i).loCredit, cbsConfigsVector.at(i).idleSlope, cbsConfigsVector.at(i).sendSlope);
@@ -177,12 +176,13 @@ ReservationTable::readConfigJSON(std::string file)
     m_flowMap.insert({flow, interface});
   }
 
-
   for (int i = 0; i < jsonRes["priorityTrafficClassMap"]["priorities"].size(); ++i) {
     uint8_t prio = jsonRes["priorityTrafficClassMap"]["priorities"][i].as<int>();
     uint8_t tc = jsonRes["priorityTrafficClassMap"]["trafficClasses"][i].as<int>();
     m_priorityTrafficClassMap.insert({prio, tc});
   }
+
+  m_dataBytes = jsonRes["dataBytes"].as<int>();
 
   m_baselineSRConfig.maxFrameSize = jsonRes["baselineSRConfig"]["maxFrameSize"].as<int>();
   m_baselineSRConfig.assignedBitrate = jsonRes["baselineSRConfig"]["assignedBitrate"].as<int>();

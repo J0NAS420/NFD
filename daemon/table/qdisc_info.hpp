@@ -4,13 +4,13 @@
 #include <vector>
 
 struct srInfo {
-  int32_t maxFrameSize;
-  int32_t assignedBitrate;
+  int32_t maxFrameSize;     // frame size in bytes
+  int32_t assignedBitrate;  // assigned bandwidth in kilobits per second
 };
 
 struct genInfo {
-  int32_t maxFrameSize;
-  int32_t portTransmitRate;
+  int32_t maxFrameSize;     // best effort frame size in bytes
+  int32_t portTransmitRate; // link capacity in kilobits per second
 };
 
 struct cbsConfigs {
