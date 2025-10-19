@@ -17,7 +17,7 @@ ReservationTable::ReservationTable()
   m_priorityTrafficClassMap = {};
   m_baselineSRConfig = {};
   m_baselineGenInfo = {};
-  //m_dataBytes = 0;
+  m_dataBytes = 0;
   readConfigJSON("/root/nfd_reservation_table_config.json");
 
   m_lastQdiscChange = std::chrono::steady_clock::now();
@@ -117,7 +117,7 @@ ReservationTable::changeQdiscWithTimer()
       srInfoStruct.maxFrameSize = m_baselineSRConfig.maxFrameSize;
       if (m_reservationMap.at(dev->first).find(*tc) != m_reservationMap.at(dev->first).end()) { // reservations exist
         srInfoStruct.assignedBitrate = m_baselineSRConfig.assignedBitrate + m_reservationMap.at(dev->first).at(*tc);
-        //srInfoStruct.maxFrameSize += m_dataBytes;
+        srInfoStruct.maxFrameSize += m_dataBytes;
         m_reservationMap.at(dev->first).at(*tc) = 0; // reset reservations
       } 
       else  // no reservations -> only use baseline config
@@ -182,7 +182,7 @@ ReservationTable::readConfigJSON(std::string file)
     m_priorityTrafficClassMap.insert({prio, tc});
   }
 
-  //m_dataBytes = jsonRes["dataBytes"].as<int>();
+  m_dataBytes = jsonRes["dataBytes"].as<int>();
 
   m_baselineSRConfig.maxFrameSize = jsonRes["baselineSRConfig"]["maxFrameSize"].as<int>();
   m_baselineSRConfig.assignedBitrate = jsonRes["baselineSRConfig"]["assignedBitrate"].as<int>();
@@ -190,7 +190,7 @@ ReservationTable::readConfigJSON(std::string file)
   m_baselineGenInfo.maxFrameSize = jsonRes["baselineGenInfo"]["maxFrameSize"].as<int>();
   m_baselineGenInfo.portTransmitRate = jsonRes["baselineGenInfo"]["portTransmitRate"].as<int>();
 
-  //m_debugFile << "Initialized JSON config -> dataBytes=" << m_dataBytes << std::endl;
+  m_debugFile << "Initialized JSON config -> dataBytes=" << m_dataBytes << std::endl;
 }
 
 }
