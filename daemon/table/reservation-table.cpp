@@ -8,8 +8,8 @@ ReservationTable::ReservationTable()
   m_reservationMap = {};
 
   // @todo REMOVE LATER!
-  std::ofstream ("/tmp/qdisc_debug.txt");
-  m_debugFile.open("/tmp/qdisc_debug.txt", std::ios_base::app);
+  //std::ofstream ("/tmp/qdisc_debug.txt");
+  //m_debugFile.open("/tmp/qdisc_debug.txt", std::ios_base::app);
 
   // the following variables are initialized by reading a JSON file
   m_cbsTrafficClasses = {};
@@ -60,11 +60,11 @@ void
 ReservationTable::addReservationIncoming(const Interest& interest, const FaceEndpoint& ingress)
 {
   // @todo add some debug lines for the file here!!!
-  m_debugFile << "RESERVATION: " << std::endl << "Interest: " << interest.getName() << std::endl;
+  /*m_debugFile << "RESERVATION: " << std::endl << "Interest: " << interest.getName() << std::endl;
   //  << " | Priority?: " << std::stoi(interest.getName().getSubName(1, 1).toUri().substr(5)) << std::endl;
   m_debugFile << "Endpoint local: " << ingress.face.getLocalUri() << "; scheme: " << ingress.face.getLocalUri().getScheme()
     << "; host: " << ingress.face.getLocalUri().getHost() << "; path: " << ingress.face.getLocalUri().getPath()
-    << "; port: " << ingress.face.getLocalUri().getPort() << std::endl << std::endl;
+    << "; port: " << ingress.face.getLocalUri().getPort() << std::endl << std::endl;*/
     
 
   if (!interest.hasTestValue() || ingress.face.getLocalUri().getScheme().compare("dev") != 0) 
@@ -109,7 +109,7 @@ ReservationTable::changeQdiscWithTimer()
   if ( (std::chrono::duration<double, std::milli>(nowTime - m_lastQdiscChange).count()) < 2000) 
     return;
   
-  m_debugFile << "QDISC:" << std::endl;
+  //m_debugFile << "QDISC:" << std::endl;
 
   m_lastQdiscChange = std::chrono::steady_clock::now();
   for (std::map< std::string, std::set<std::string> >::const_iterator dev = m_duplicateCheckMap.begin(); dev != m_duplicateCheckMap.end(); ++dev) {
@@ -125,17 +125,17 @@ ReservationTable::changeQdiscWithTimer()
       else  // no reservations -> only use baseline config
         srInfoStruct.assignedBitrate = m_baselineSRConfig.assignedBitrate;
       srInfoVector.push_back(srInfoStruct);
-      m_debugFile << "srInfo for " << (int) (*tc) << ": maxFrameSize=" << srInfoStruct.maxFrameSize << ", assignedBitrate=" << srInfoStruct.assignedBitrate << std::endl;
+      //m_debugFile << "srInfo for " << (int) (*tc) << ": maxFrameSize=" << srInfoStruct.maxFrameSize << ", assignedBitrate=" << srInfoStruct.assignedBitrate << std::endl;
     }
 
-    m_debugFile << "genInfo: maxFrameSize=" << m_baselineGenInfo.maxFrameSize << ", portTransmitRate=" << m_baselineGenInfo.portTransmitRate << std::endl;
+    //m_debugFile << "genInfo: maxFrameSize=" << m_baselineGenInfo.maxFrameSize << ", portTransmitRate=" << m_baselineGenInfo.portTransmitRate << std::endl;
       
     std::vector<cbsConfigs> cbsConfigsVector = prepareCBSInfo(srInfoVector, m_baselineGenInfo);
     for (size_t i = 0; i < m_cbsTrafficClasses.size(); ++i) { // change CBS parameters for each traffic class
       std::string parentClassID = "100:" + std::to_string(m_cbsTrafficClasses.at(i));
       // @todo REMOVE LATER!
-      m_debugFile << "tc qdisc change dev "  << dev->first.c_str() << " handle none parent " << parentClassID.c_str() << " cbs hicredit " << cbsConfigsVector.at(i).hiCredit
-        << " locredit " << cbsConfigsVector.at(i).loCredit << " idleslope " << cbsConfigsVector.at(i).idleSlope << " sendlope " << cbsConfigsVector.at(i).sendSlope << std::endl << std::endl;
+      //m_debugFile << "tc qdisc change dev "  << dev->first.c_str() << " handle none parent " << parentClassID.c_str() << " cbs hicredit " << cbsConfigsVector.at(i).hiCredit
+      //  << " locredit " << cbsConfigsVector.at(i).loCredit << " idleslope " << cbsConfigsVector.at(i).idleSlope << " sendlope " << cbsConfigsVector.at(i).sendSlope << std::endl << std::endl;
       int qdiscError = change_cbs(dev->first.c_str(), "none", parentClassID.c_str(), cbsConfigsVector.at(i).hiCredit, 
           cbsConfigsVector.at(i).loCredit, cbsConfigsVector.at(i).idleSlope, cbsConfigsVector.at(i).sendSlope);
       if (qdiscError)
@@ -195,7 +195,7 @@ ReservationTable::readConfigJSON(std::string file)
   m_baselineGenInfo.maxFrameSize = jsonRes["baselineGenInfo"]["maxFrameSize"].as<int>();
   m_baselineGenInfo.portTransmitRate = jsonRes["baselineGenInfo"]["portTransmitRate"].as<int>();
 
-  m_debugFile << "Initialized JSON config -> dataBytes=" << m_dataBytes << std::endl;
+  //m_debugFile << "Initialized JSON config -> dataBytes=" << m_dataBytes << std::endl;
 }
 
 }

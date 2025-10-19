@@ -72,7 +72,7 @@ private:
   int32_t m_dataBytes;
 
   // @todo REMOVE LATER!!!
-  std::ofstream m_debugFile;
+  //std::ofstream m_debugFile;
 };
 
 } // namespace nfd
