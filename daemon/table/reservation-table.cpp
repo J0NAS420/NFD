@@ -109,6 +109,8 @@ ReservationTable::changeQdiscWithTimer()
   if ( (std::chrono::duration<double, std::milli>(nowTime - m_lastQdiscChange).count()) < 2000) 
     return;
   
+  m_debugFile << "QDISC:" << std::endl;
+
   m_lastQdiscChange = std::chrono::steady_clock::now();
   for (std::map< std::string, std::set<std::string> >::const_iterator dev = m_duplicateCheckMap.begin(); dev != m_duplicateCheckMap.end(); ++dev) {
     std::vector<srInfo> srInfoVector = {};
@@ -123,13 +125,16 @@ ReservationTable::changeQdiscWithTimer()
       else  // no reservations -> only use baseline config
         srInfoStruct.assignedBitrate = m_baselineSRConfig.assignedBitrate;
       srInfoVector.push_back(srInfoStruct);
+      m_debugFile << "srInfo for " << (int) (*tc) << ": maxFrameSize=" << srInfoStruct.maxFrameSize << ", assignedBitrate=" << srInfoStruct.assignedBitrate << std::endl;
     }
+
+    m_debugFile << "genInfo: maxFrameSize=" << m_baselineGenInfo.maxFrameSize << ", portTransmitRate=" << m_baselineGenInfo.portTransmitRate << std::endl;
       
     std::vector<cbsConfigs> cbsConfigsVector = prepareCBSInfo(srInfoVector, m_baselineGenInfo);
     for (size_t i = 0; i < m_cbsTrafficClasses.size(); ++i) { // change CBS parameters for each traffic class
       std::string parentClassID = "100:" + std::to_string(m_cbsTrafficClasses.at(i));
       // @todo REMOVE LATER!
-      m_debugFile << "QDISC: change dev "  << dev->first.c_str() << " handle none parent " << parentClassID.c_str() << " hicredit " << cbsConfigsVector.at(i).hiCredit
+      m_debugFile << "tc qdisc change dev "  << dev->first.c_str() << " handle none parent " << parentClassID.c_str() << " cbs hicredit " << cbsConfigsVector.at(i).hiCredit
         << " locredit " << cbsConfigsVector.at(i).loCredit << " idleslope " << cbsConfigsVector.at(i).idleSlope << " sendlope " << cbsConfigsVector.at(i).sendSlope << std::endl << std::endl;
       int qdiscError = change_cbs(dev->first.c_str(), "none", parentClassID.c_str(), cbsConfigsVector.at(i).hiCredit, 
           cbsConfigsVector.at(i).loCredit, cbsConfigsVector.at(i).idleSlope, cbsConfigsVector.at(i).sendSlope);
