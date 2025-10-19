@@ -60,7 +60,7 @@ void
 ReservationTable::addReservationIncoming(const Interest& interest, const FaceEndpoint& ingress)
 {
   // @todo add some debug lines for the file here!!!
-  m_debugFile << "DEVICE: " << std::endl << "Interest: " << interest.getName() << std::endl;
+  m_debugFile << "RESERVATION: " << std::endl << "Interest: " << interest.getName() << std::endl;
   //  << " | Priority?: " << std::stoi(interest.getName().getSubName(1, 1).toUri().substr(5)) << std::endl;
   m_debugFile << "Endpoint local: " << ingress.face.getLocalUri() << "; scheme: " << ingress.face.getLocalUri().getScheme()
     << "; host: " << ingress.face.getLocalUri().getHost() << "; path: " << ingress.face.getLocalUri().getPath()
@@ -117,7 +117,7 @@ ReservationTable::changeQdiscWithTimer()
       srInfoStruct.maxFrameSize = m_baselineSRConfig.maxFrameSize;
       if (m_reservationMap.at(dev->first).find(*tc) != m_reservationMap.at(dev->first).end()) { // reservations exist
         srInfoStruct.assignedBitrate = m_baselineSRConfig.assignedBitrate + m_reservationMap.at(dev->first).at(*tc);
-        //srInfoStruct.maxFrameSize += m_dataBytes;
+        srInfoStruct.maxFrameSize += m_dataBytes;
         m_reservationMap.at(dev->first).at(*tc) = 0; // reset reservations
       } 
       else  // no reservations -> only use baseline config
@@ -189,6 +189,8 @@ ReservationTable::readConfigJSON(std::string file)
     
   m_baselineGenInfo.maxFrameSize = jsonRes["baselineGenInfo"]["maxFrameSize"].as<int>();
   m_baselineGenInfo.portTransmitRate = jsonRes["baselineGenInfo"]["portTransmitRate"].as<int>();
+
+  m_debugFile << "Initialized JSON config -> dataBytes=" << m_dataBytes << std::endl;
 }
 
 }
