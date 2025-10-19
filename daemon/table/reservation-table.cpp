@@ -189,9 +189,6 @@ ReservationTable::readConfigJSON(std::string file)
     
   m_baselineGenInfo.maxFrameSize = jsonRes["baselineGenInfo"]["maxFrameSize"].as<int>();
   m_baselineGenInfo.portTransmitRate = jsonRes["baselineGenInfo"]["portTransmitRate"].as<int>();
-
-  // @todo REMOVE LATER!
-  m_debugFile << "JSON CONFIG: " << std::endl << jsonRes.as_str() << std::endl << std::endl;
 }
 
 }
