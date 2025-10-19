@@ -117,7 +117,7 @@ ReservationTable::changeQdiscWithTimer()
       srInfoStruct.maxFrameSize = m_baselineSRConfig.maxFrameSize;
       if (m_reservationMap.at(dev->first).find(*tc) != m_reservationMap.at(dev->first).end()) { // reservations exist
         srInfoStruct.assignedBitrate = m_baselineSRConfig.assignedBitrate + m_reservationMap.at(dev->first).at(*tc);
-        srInfoStruct.maxFrameSize += m_dataBytes;
+        //srInfoStruct.maxFrameSize += m_dataBytes;
         m_reservationMap.at(dev->first).at(*tc) = 0; // reset reservations
       } 
       else  // no reservations -> only use baseline config
