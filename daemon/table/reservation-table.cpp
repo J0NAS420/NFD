@@ -33,7 +33,7 @@ ReservationTable::addReservationToMap(const Interest& interest, const std::strin
   if (m_duplicateCheckMap.find(interface) == m_duplicateCheckMap.end()) { // interface not found -> add new set/map to maps
     // add set to check for future duplicate interests
     std::set<std::string> interestNameSet = {};
-    interestNameSet.insert(interest.getName().toUri());
+    interestNameSet.insert(interest.getName().getPrefix(-1).toUri());
     m_duplicateCheckMap.insert({interface, interestNameSet});
         
     // add map to count reserved bandwidth
@@ -44,8 +44,8 @@ ReservationTable::addReservationToMap(const Interest& interest, const std::strin
   }
   else { // interface found -> check if reservation is no duplicate -> if not add reservation
     std::set<std::string> interestNameSet = m_duplicateCheckMap.at(interface);
-    if (interestNameSet.find(interest.getName().toUri()) == interestNameSet.end()) { // no duplicate -> add reservation
-      m_duplicateCheckMap.at(interface).insert(interest.getName().toUri());
+    if (interestNameSet.find(interest.getName().getPrefix(-1).toUri()) == interestNameSet.end()) { // no duplicate -> add reservation
+      m_duplicateCheckMap.at(interface).insert(interest.getName().getPrefix(-1).toUri());
           
       uint8_t trafficClass = m_priorityTrafficClassMap.at(priority);
       if (m_reservationMap.at(interface).find(trafficClass) == m_reservationMap.at(interface).end())
