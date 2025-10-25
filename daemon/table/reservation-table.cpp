@@ -10,6 +10,7 @@ ReservationTable::ReservationTable()
   // @todo REMOVE LATER!
   //std::ofstream ("/tmp/qdisc_debug.txt");
   //m_debugFile.open("/tmp/qdisc_debug.txt", std::ios_base::app);
+  m_qdiscChangeInterval = 1000;
 
   // the following variables are initialized by reading a JSON file
   m_cbsTrafficClasses = {};
@@ -39,7 +40,7 @@ ReservationTable::addReservationToMap(const Interest& interest, const std::strin
     // add map to count reserved bandwidth
     uint8_t trafficClass = m_priorityTrafficClassMap.at(priority);
     std::map<uint8_t, uint32_t> tcReservationMap = {};
-    tcReservationMap.insert({trafficClass, interest.getTestValue().value()});
+    tcReservationMap.insert({trafficClass, interest.getReservation().value()});
     m_reservationMap.insert({interface, tcReservationMap});
   }
   else { // interface found -> check if reservation is no duplicate -> if not add reservation
@@ -50,7 +51,7 @@ ReservationTable::addReservationToMap(const Interest& interest, const std::strin
       uint8_t trafficClass = m_priorityTrafficClassMap.at(priority);
       if (m_reservationMap.at(interface).find(trafficClass) == m_reservationMap.at(interface).end())
         m_reservationMap.at(interface).insert({trafficClass, 0});
-      m_reservationMap.at(interface).at(trafficClass) += interest.getTestValue().value();
+      m_reservationMap.at(interface).at(trafficClass) += interest.getReservation().value();
     }
   }
 }
@@ -67,7 +68,7 @@ ReservationTable::addReservationIncoming(const Interest& interest, const FaceEnd
     << "; port: " << ingress.face.getLocalUri().getPort() << std::endl << std::endl;*/
     
 
-  if (!interest.hasTestValue() || ingress.face.getLocalUri().getScheme().compare("dev") != 0) 
+  if (!interest.hasReservation() || ingress.face.getLocalUri().getScheme().compare("dev") != 0) 
     return;
 
   const std::string flow = ingress.face.getLocalUri().getHost();
@@ -87,7 +88,7 @@ ReservationTable::addReservationIncoming(const Interest& interest, const FaceEnd
 void
 ReservationTable::addReservationOutgoing(const Interest& interest, const Face& egress)
 {
-  if (!interest.hasTestValue() || egress.getLocalUri().getScheme().compare("dev") != 0) 
+  if (!interest.hasReservation() || egress.getLocalUri().getScheme().compare("dev") != 0) 
     return;
 
   const std::string flow = egress.getLocalUri().getHost();
@@ -106,12 +107,11 @@ ReservationTable::changeQdiscWithTimer()
     return;
 
   auto nowTime = std::chrono::steady_clock::now();
-  if ( (std::chrono::duration<double, std::milli>(nowTime - m_lastQdiscChange).count()) < 2000) 
+  if ( (std::chrono::duration<double, std::milli>(nowTime - m_lastQdiscChange).count()) < m_qdiscChangeInterval) 
     return;
   
   //m_debugFile << "QDISC:" << std::endl;
 
-  m_lastQdiscChange = std::chrono::steady_clock::now();
   for (std::map< std::string, std::set<std::string> >::const_iterator dev = m_duplicateCheckMap.begin(); dev != m_duplicateCheckMap.end(); ++dev) {
     std::vector<srInfo> srInfoVector = {};
     for (std::vector<uint8_t>::const_iterator tc = m_cbsTrafficClasses.begin(); tc != m_cbsTrafficClasses.end(); ++tc) { // get reservations for each traffic class
@@ -143,6 +143,7 @@ ReservationTable::changeQdiscWithTimer()
     }
     m_duplicateCheckMap.at(dev->first).clear(); // reset duplicate checks 
   }
+  m_lastQdiscChange = std::chrono::steady_clock::now();
 }
 
 // inspired by https://stackoverflow.com/questions/5891610/how-to-remove-certain-characters-from-a-string-in-c
@@ -160,6 +161,8 @@ ReservationTable::readConfigJSON(std::string file)
 {
   std::ifstream jsonStream (file);
   RSJresource jsonRes (jsonStream);
+
+  m_qdiscChangeInterval = jsonRes["qdiscChangeInterval"].as<int>();
 
   RSJarray tcArray = jsonRes["cbsTrafficClasses"].as_array();
   for (auto tc = tcArray.begin(); tc != tcArray.end(); ++tc) 

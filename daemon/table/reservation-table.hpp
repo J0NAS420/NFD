@@ -16,7 +16,7 @@
 namespace nfd {
 
 struct reservationValues {
-  uint64_t testValue;
+  uint64_t Reservation;
   Name interestName;
 };
 
@@ -45,6 +45,9 @@ private:
 
 private:
   std::chrono::time_point<std::chrono::steady_clock> m_lastQdiscChange;
+
+  // Interval in ms between qdisc changes
+  int32_t m_qdiscChangeInterval;
 
   // map interfaces to interest names 
   std::map< std::string, std::set<std::string> > m_duplicateCheckMap;
