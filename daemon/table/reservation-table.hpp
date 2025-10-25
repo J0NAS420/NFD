@@ -72,7 +72,7 @@ private:
   genInfo m_baselineGenInfo;
 
   // Amount of data in reserved packets (in bytes)
-  int32_t m_dataBytes;
+  int32_t m_dataMaxFrameSize;
 
   // @todo REMOVE LATER!!!
   //std::ofstream m_debugFile;
